@@ -5,14 +5,14 @@ edition = "2021"
 
 [dependencies]
 wit-bindgen-rt = { version = "0.39.0", features = ["bitflags"] }
-limbo_core = { path = "../../../../clones/limbo/core", default-features = false }
+limbo_core = { git = "https://github.com/DougAnderson444/limbo.git", default-features = false, branch = "wasm-unk-unk" }
 getrandom = { version = "0.2", features = ["custom"] }
 
 [dev-dependencies]
 wasm_component_layer = "0.1.18"
 wasmtime_runtime_layer = "26.0.0"
 rand = "0.8.5"
-chrono = { version = "0.4.19", default-features = false, features = [] }
+chrono = { version = "0.4.19", default-features = false, features = ["clock"] }
 wasmtime = { version = "25" }
 wasmtime-wasi = "25"
 thiserror = "1.0"
@@ -27,7 +27,3 @@ debug = false
 strip = true
 lto = true
 panic = "abort"
-
-[patch.crates-io]
-chrono = { version = "0.4", default-features = false, features = [] }
-getrandom = { version = "0.2", default-features = false, features = [] }
