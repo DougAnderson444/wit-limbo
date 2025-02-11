@@ -18,6 +18,10 @@ cargo component build --target wasm32-unknown-unknown --release
 cargo test -- --nocapture
 ```
 
+If you have [just.systems](https://just.systems) installed, you can run the tests with the just commands at [./justfile](./justfile).
+
+## Tests
+
 There are 2 tests:
 
 1. [`wasm_component_layer`](https://github.com/DouglasDwyer/wasm_component_layer): Which is a runtime agnostic layer for running wasm components anywhere. It's very flexible and allows you to have isomorphic code on native and browser. 
