@@ -36,28 +36,6 @@ impl WasiView for MyCtx {
     }
 }
 
-// /// Implementing this trait gives us
-// /// - the ability to add_to_linker using SeedKeeper::add_to_linker
-// /// - call get_seed from inside out component
-// ///
-// /// Normally this would be implemented by another WIT component that is composed with this
-// /// component, but for testing we mock it up below.
-// impl bindgen::peerpiper::edwards_ui::wurbo_types::Host for MyCtx {}
-//
-// impl bindgen::peerpiper::edwards_ui::wurbo_out::Host for MyCtx {
-//     fn render(
-//         &mut self,
-//         _ctx: bindgen::peerpiper::edwards_ui::wurbo_out::Context,
-//     ) -> wasmtime::Result<Result<String, String>> {
-//         // return some html as string
-//         Ok(Ok("edwards ui for testing".to_string()))
-//     }
-//
-//     fn activate(&mut self) -> wasmtime::Result<()> {
-//         Ok(())
-//     }
-// }
-
 impl host::Host for MyCtx {
     fn random_byte(&mut self) -> u8 {
         rand::random::<u8>()
