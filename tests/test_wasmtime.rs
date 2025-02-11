@@ -14,12 +14,7 @@ use wasmtime::component::{Component, Linker};
 use wasmtime::{Config, Engine, Store};
 use wasmtime_wasi::{ResourceTable, WasiCtx, WasiCtxBuilder, WasiView};
 
-use bindgen::{
-    component::wit_limbo::host,
-    exports::component::wit_limbo::limbo::{
-        Database, Guest, GuestDatabase, RecordValue, Statement,
-    },
-};
+use bindgen::{component::wit_limbo::host, exports::component::wit_limbo::limbo::RecordValue};
 
 struct MyCtx {
     table: ResourceTable,
@@ -87,9 +82,72 @@ pub fn workspace_dir() -> PathBuf {
 #[cfg(test)]
 mod aggregate_peerpiper_tests {
 
-    use crate::bindgen;
+    use std::fmt::{Display, Formatter};
 
     use super::*;
+
+    use crate::bindgen;
+
+    #[derive(Debug)]
+    pub struct ColumnInfo {
+        ///  Column ID
+        pub cid: i64,
+        /// Column Name
+        pub name: String,
+        /// Column Type
+        pub ty: String,
+        /// Column Not Null
+        pub is_nullable: bool,
+        /// Column Default Value
+        pub default_value: Option<String>,
+        /// Column Primary Key
+        pub is_pk: bool,
+    }
+
+    impl Display for ColumnInfo {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            // make the display format dependent on whether the column is nullable or not
+            // if it IS something, display it. If it isn't, hide it.
+            // If it's nullable simply wirte NULLABLE, same for Primary Key.
+            // If there's a Defualt Value, display it. If no default, hide it.
+            match (self.is_nullable, self.default_value.is_some(), self.is_pk) {
+                (true, true, true) => write!(
+                    f,
+                    "Column: {} {} NOT NULL DEFAULT {} PRIMARY KEY",
+                    self.name,
+                    self.ty,
+                    self.default_value.as_ref().unwrap()
+                ),
+                (true, true, false) => write!(
+                    f,
+                    "Column: {} {} NOT NULL DEFAULT {}",
+                    self.name,
+                    self.ty,
+                    self.default_value.as_ref().unwrap()
+                ),
+                (true, false, true) => {
+                    write!(f, "Column: {} {} NOT NULL PRIMARY KEY", self.name, self.ty)
+                }
+                (true, false, false) => write!(f, "Column: {} {} NOT NULL", self.name, self.ty),
+                (false, true, true) => write!(
+                    f,
+                    "Column: {} {} DEFAULT {} PRIMARY KEY",
+                    self.name,
+                    self.ty,
+                    self.default_value.as_ref().unwrap()
+                ),
+                (false, true, false) => write!(
+                    f,
+                    "Column: {} {} DEFAULT {}",
+                    self.name,
+                    self.ty,
+                    self.default_value.as_ref().unwrap()
+                ),
+                (false, false, true) => write!(f, "Column: {} {} PRIMARY KEY", self.name, self.ty),
+                (false, false, false) => write!(f, "Column: {} {}", self.name, self.ty),
+            }
+        }
+    }
 
     #[test]
     fn test_wasmtime_load() -> wasmtime::Result<(), TestError> {
@@ -159,6 +217,20 @@ mod aggregate_peerpiper_tests {
             &sql,
         )?;
 
+        let sql_table_metadata = "PRAGMA table_info(users)".to_string();
+
+        let statement = bindings
+            .component_wit_limbo_limbo()
+            .database()
+            .call_prepare(&mut store, resource_constructor, &sql_table_metadata)?;
+
+        let mut headers = bindings
+            .component_wit_limbo_limbo()
+            .statement()
+            .call_all(&mut store, statement)?;
+
+        eprintln!("\n\n{:?}\n\n", headers);
+
         let sql = "SELECT * FROM users;".to_string();
         let statement = bindings
             .component_wit_limbo_limbo()
@@ -172,22 +244,48 @@ mod aggregate_peerpiper_tests {
             .call_all(&mut store, statement)?;
 
         println!("[ResultLog]");
-        println!(" └ database.prepare() =");
+        println!(" └ database");
+
+        // Show the Headers first. This is the column names.
+        print!("    └ Headers: ");
+        for header in headers.iter_mut() {
+            // Column ID, Name, Type, NotNull, Default Value, Primary Key
+            if let [RecordValue::Integer(cid), RecordValue::Text(name), RecordValue::Text(ty), RecordValue::Integer(notnull), RecordValue::Null, RecordValue::Integer(pk)] =
+                &header[..]
+            {
+                let column_info = ColumnInfo {
+                    cid: *cid,
+                    name: name.to_string(),
+                    ty: ty.to_string(),
+                    is_nullable: notnull == &0,
+                    default_value: None,
+                    is_pk: pk == &1,
+                };
+                print!("{}", column_info);
+            } else {
+                print!("Not printable");
+            }
+
+            print!(" | ");
+        }
+
+        println!();
 
         for (i, row) in rows.iter().enumerate() {
             println!("    └ Row {}", i);
             for (j, col) in row.iter().enumerate() {
                 match col {
                     RecordValue::Integer(i) => {
-                        print!("       └ Column {}: {:?}", j, i);
+                        print!("       └ Row {}: {:?}", j, i);
                     }
                     RecordValue::Text(s) => {
-                        print!("       └ Column {}: {:?}", j, s);
+                        print!("       └ Row {}: {:?}", j, s);
                     }
-                    _ => print!("       └ Column: {:?}", col),
+                    _ => print!("       └ Row {:?}", col),
                 }
             }
         }
+        println!("\n");
 
         Ok(())
     }
