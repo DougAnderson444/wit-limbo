@@ -1,0 +1,53 @@
+package component:wit-limbo;
+
+interface host {
+  /// get a random byte
+  random-byte: func() -> u8;
+
+  /// Logs a message to the console. 
+  log: func(message: string);
+}
+
+interface limbo {
+
+  variant null {
+    none
+  }
+
+  /// Value types 
+  variant record-value {
+    /// A null value 
+    null,
+    /// A string value.
+    integer(s64),
+    /// Float 
+    float(f64),
+    /// Text 
+    text(string),
+    /// Blob 
+    blob(list<u8>),
+  }
+
+  resource database {
+    /// Create a new database connection.
+    constructor(path: string);
+
+    /// Execute a SQL statement.
+    exec: func(sql: string);
+    
+    /// Prepare a SQL statement. 
+    prepare: func(sql: string) -> statement;
+  }
+
+  /// Resource statement. 
+  resource statement {
+    /// Get all rows from the statement.
+    all: func() -> list<list<record-value>>;
+  }
+}
+
+/// An example world for the component to target.
+world example {
+    import host;
+    export limbo;
+}
