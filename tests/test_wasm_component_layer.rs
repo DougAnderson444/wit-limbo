@@ -9,7 +9,9 @@ use std::path::{Path, PathBuf};
 
 use wasm_component_layer::*;
 
-use wasmtime_runtime_layer as runtime_layer;
+// Note: wasmi is way faster than wasmtime when using the layer
+//use wasmtime_runtime_layer as runtime_layer;
+use wasmi_runtime_layer as runtime_layer;
 
 /// Utility function to get the workspace dir
 pub fn workspace_dir() -> PathBuf {

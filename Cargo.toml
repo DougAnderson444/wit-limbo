@@ -11,6 +11,7 @@ getrandom = { version = "0.2", features = ["custom"] }
 [dev-dependencies]
 wasm_component_layer = "0.1.18"
 wasmtime_runtime_layer = "26.0.0"
+wasmi_runtime_layer = "0.40.0"
 rand = "0.8.5"
 chrono = { version = "0.4.19", default-features = false, features = ["clock"] }
 wasmtime = { version = "25" }
